@@ -63,7 +63,7 @@ Please refer to the individual repositories for setup and deployment instruction
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](https://github.com/storres20/temphu/blob/main/LICENSE.txt).
 
 ---
 
