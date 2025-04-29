@@ -1,5 +1,6 @@
 /* 26/04/2025 - This version is for ESP8266 v3 */
 /* The issue related with initialization between OLED and ds18b20 temperature sensor has fixed */
+/* Now added OLED messages for WiFi events */
 
 #include <ESP8266WiFi.h>
 #include <ArduinoWebsockets.h>
@@ -16,7 +17,7 @@ using namespace websockets;
 // **Pin definitions**
 #define DHTPIN D4
 #define DHTTYPE DHT11
-#define ONE_WIRE_BUS D3  // DS18B20 conectado aquí
+#define ONE_WIRE_BUS D3  // DS18B20 connected here
 #define LED_PIN D5
 #define RESET_PIN D6
 
@@ -51,6 +52,24 @@ const long oledCheckInterval = 5000;
 unsigned long lastPingTime = 0;
 const unsigned long pingInterval = 30000;  // 30s ping keep-alive
 
+// **New: Show messages on OLED**
+void showOledMessage(const char* line1, const char* line2 = "", const char* line3 = "") {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(0, 0);
+  display.println(line1);
+  if (strlen(line2) > 0) {
+    display.setCursor(0, 20);
+    display.println(line2);
+  }
+  if (strlen(line3) > 0) {
+    display.setCursor(0, 40);
+    display.println(line3);
+  }
+  display.display();
+}
+
 // **WebSocket Events**
 void webSocketMessage(WebsocketsMessage message) {
   Serial.printf("WebSocket Message Received: %s\n", message.data().c_str());
@@ -80,18 +99,59 @@ void setup() {
   pinMode(RESET_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(RESET_PIN), resetWiFiSettings, FALLING);
 
-  // ⚠️ Importante: inicializar primero I2C y OLED
   Wire.begin(D2, D1);
   display.begin(0x3C, true);
   display.clearDisplay();
   display.display();
 
-  // ⚠️ Ahora sí: inicializar sensores
   dht.begin();
-  sensors.begin();  // <- ¡Ahora va después del display!
+  sensors.begin();
 
-  wifiManager.addParameter(&custom_username);
-  wifiManager.autoConnect("ESP8266-Setup", "password123");
+// Show waiting WiFi message with countdown
+if (WiFi.SSID() == "") {
+  // No WiFi credentials saved
+  showOledMessage("No WiFi saved", "SSID: ESP8266-Setup", "Password: password123");
+  delay(2000);
+} else {
+  // Countdown for WiFi connection attempt
+  for (int i = 15; i > 0; i--) {
+    char line2[20];
+    sprintf(line2, "Connecting in %ds", i);
+    showOledMessage("Waiting for WiFi...", line2);
+    delay(1000);
+    if (WiFi.status() == WL_CONNECTED) {
+      break;
+    }
+  }
+}
+
+// If not connected, show WiFiManager portal info
+if (WiFi.status() != WL_CONNECTED) {
+  showOledMessage("WiFiManager Portal", "SSID: ESP8266-Setup", "Password: password123");
+  delay(2000);
+}
+
+// Start WiFiManager
+if (isUsernameStored()) {
+  getUsername();
+  custom_username.setValue(username, 16); // Rellena campo con username guardado
+} else {
+  custom_username.setValue("", 16); // Campo vacío si no hay username
+}
+
+wifiManager.addParameter(&custom_username);
+
+wifiManager.autoConnect("ESP8266-Setup", "password123");
+
+  if (WiFi.SSID() == "") {
+    // No WiFi credentials saved
+    showOledMessage("No WiFi saved", "SSID: ESP8266-Setup", "Password: password123");
+    delay(2000);
+  } else if (WiFi.status() != WL_CONNECTED) {
+    // Opened WiFiManager portal
+    showOledMessage("WiFiManager Portal", "SSID: ESP8266-Setup", "Password: password123");
+    delay(2000);
+  }
 
   Serial.println("✅ Connected to Wi-Fi.");
   Serial.print("📡 IP Address: ");
@@ -111,6 +171,10 @@ void setup() {
   digitalWrite(LED_PIN, HIGH);
 
   configTime(-5 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+
+  // Show message
+  showOledMessage("Connecting...");
+
   waitForNTPTime();
 
   webSocket.onMessage(webSocketMessage);
@@ -122,8 +186,9 @@ void setup() {
 void loop() {
   if (resetTriggered) {
     Serial.println("🔄 Resetting WiFi...");
+    showOledMessage("Resetting WiFi...", "SSID: ESP8266-Setup", "Password: password123");
     wifiManager.resetSettings();
-    delay(1000);
+    delay(2000);
     ESP.restart();
   }
 
@@ -249,17 +314,25 @@ void displayDataOnOLED(float tempDHT, float humDHT, float tempDS) {
   display.setCursor(0, 0);
   display.print("Welcome ");
   display.print(username);
+
   display.setCursor(0, 20);
   display.print("Temp: ");
   display.print(tempDHT);
   display.print(" C");
+
   display.setCursor(0, 30);
   display.print("Humidity: ");
   display.print(humDHT);
   display.print(" %");
+
   display.setCursor(0, 40);
-  display.print("DS18B20 Temp: ");
+  display.print("DS18B20: ");
   display.print(tempDS);
   display.print(" C");
+
+  display.setCursor(0, 55);
+  display.print("WS: ");
+  display.print(wsConnected ? "Conn" : "Fail");
+
   display.display();
 }
