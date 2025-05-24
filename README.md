@@ -1,13 +1,13 @@
-# TEMPHU: An Open-Source IoT Solution for Reliable Real-Time Temperature and Humidity Monitoring in Healthcare Facilities
+# MHUTEMP: An Open-Source IoT Solution for Reliable Real-Time Humidity and Temperature Monitoring in Healthcare Facilities
 
-**TEMPHU** (Temperature and Humidity Monitoring Unit) is an open-source IoT-based system designed to provide real-time environmental monitoring for healthcare applications, particularly blood bank refrigerators.  
+**MHUTEMP** (Humidity and Temperature Monitoring Unit) is an open-source IoT-based system designed to provide real-time environmental monitoring for healthcare applications, particularly blood bank refrigerators.  
 The project offers an affordable and scalable alternative to traditional commercial monitoring systems, ensuring full control over data and system customization without subscription fees.
 
 ---
 
 ## 📚 Project Structure
 
-The TEMPHU system consists of two main components, maintained in separate repositories:
+The MHUTEMP system consists of two main components, maintained in separate repositories:
 
 - **Backend Server** (Node.js + MongoDB):  
   [https://github.com/storres20/bio-data](https://github.com/storres20/bio-data)
