@@ -1,5 +1,5 @@
-/* 26/04/2025 - Version Standalone Sensor */
-/* No WiFi - No WebSocket - Only OLED display with DHT11 + DS18B20 */
+/* 09/06/2025 - Standalone ESP8266 v3 with DHT22 + DS18B20 */
+/* Calibration formulas from certificate TC-14504-2025 applied */
 
 #include <DHT.h>
 #include <OneWire.h>
@@ -8,10 +8,10 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
-// **Pin definitions**
+// === Pin definitions ===
 #define DHTPIN D4
-#define DHTTYPE DHT11
-#define ONE_WIRE_BUS D3  // DS18B20 connected here
+#define DHTTYPE DHT22
+#define ONE_WIRE_BUS D3
 
 DHT dht(DHTPIN, DHTTYPE);
 OneWire oneWire(ONE_WIRE_BUS);
@@ -19,11 +19,10 @@ DallasTemperature sensors(&oneWire);
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &Wire);
 
 unsigned long previousMillis = 0;
-const long interval = 2000; // Update every 2 seconds
+const long interval = 2000;
 
 void setup() {
   Serial.begin(115200);
-
   Wire.begin(D2, D1);
   display.begin(0x3C, true);
   display.clearDisplay();
@@ -32,14 +31,12 @@ void setup() {
   dht.begin();
   sensors.begin();
 
-  // Show "Connecting..." at startup
-  display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SH110X_WHITE);
   display.setCursor(0, 20);
   display.println("Connecting...");
   display.display();
-  delay(3000);  // Show for 3 seconds
+  delay(3000);
 }
 
 void loop() {
@@ -48,24 +45,25 @@ void loop() {
     previousMillis = currentMillis;
 
     sensors.requestTemperatures();
-    float dsTemperature = sensors.getTempCByIndex(0);
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
+    float raw_dsTemp = sensors.getTempCByIndex(0);
+    float raw_dhtTemp = dht.readTemperature();
+    float raw_dhtHum = dht.readHumidity();
 
-    if (isnan(temperature)) {
-      Serial.println("Error reading DHT11 temperature!");
-      temperature = 0;
-    }
-    if (isnan(humidity)) {
-      Serial.println("Error reading DHT11 humidity!");
-      humidity = 0;
-    }
-    if (dsTemperature == -127.00) {
-      Serial.println("Error reading DS18B20!");
-      dsTemperature = 0;
-    }
+    // Corrección DS18B20
+    float dsTemp_corr = (raw_dsTemp == -127.00) ? 0 : raw_dsTemp - 0.1;
 
-    // Show measurements on OLED
+    // Corrección temperatura DHT22 (cuadrática)
+    float dhtTemp_corr = isnan(raw_dhtTemp) ? 0 :
+      (0.0019 * raw_dhtTemp * raw_dhtTemp) + (0.9144 * raw_dhtTemp) + 0.1345;
+
+    // Corrección humedad DHT22 (lineal)
+    float dhtHum_corr = isnan(raw_dhtHum) ? 0 : (1.230 * raw_dhtHum) - 20.55;
+
+    if (isnan(raw_dhtTemp)) Serial.println("Error reading DHT22 temperature!");
+    if (isnan(raw_dhtHum)) Serial.println("Error reading DHT22 humidity!");
+    if (raw_dsTemp == -127.00) Serial.println("Error reading DS18B20!");
+
+    // Mostrar en pantalla
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SH110X_WHITE);
@@ -74,23 +72,23 @@ void loop() {
     display.println("Standalone Mode");
 
     display.setCursor(0, 15);
-    display.print("Temp: ");
-    display.print(temperature);
+    display.print("Temp(IN): ");
+    display.print(dhtTemp_corr, 2);
     display.print(" C");
 
     display.setCursor(0, 25);
-    display.print("Humidity: ");
-    display.print(humidity);
+    display.print("Hum(IN): ");
+    display.print(dhtHum_corr, 2);
     display.print(" %");
 
     display.setCursor(0, 35);
-    display.print("DS18B20: ");
-    display.print(dsTemperature);
+    display.print("Temp(OUT): ");
+    display.print(dsTemp_corr, 2);
     display.print(" C");
 
     display.display();
 
-    // Also print to Serial Monitor
-    Serial.printf("Temp: %.2f°C, Humidity: %.2f%%, DS18B20: %.2f°C\n", temperature, humidity, dsTemperature);
+    // Serial debug
+    Serial.printf("T.IN: %.2f°C, H.IN: %.2f%%, T.OUT: %.2f°C\n", dhtTemp_corr, dhtHum_corr, dsTemp_corr);
   }
 }
