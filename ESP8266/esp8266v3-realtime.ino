@@ -60,24 +60,30 @@ void displayDataOnOLED(float tempCorr, float humCorr, float dsCorr) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
+
+  // Line 1: Date and Time (dd/mm/yyyy hh:mm)
+  time_t now = time(nullptr);
+  struct tm* timeinfo = localtime(&now);
+  char datetimeBuf[20];
+  strftime(datetimeBuf, sizeof(datetimeBuf), "%d/%m/%Y %H:%M", timeinfo);
   display.setCursor(0, 0);
+  display.print(datetimeBuf);
+
+  // Line 2: Username
+  display.setCursor(0, 10);
   display.print("User: ");
   display.print(username);
 
-  time_t now = time(nullptr);
-  struct tm* timeinfo = localtime(&now);
-  char timeBuf[6];
-  strftime(timeBuf, sizeof(timeBuf), "%H:%M", timeinfo);
-  display.setCursor(128 - 6 * strlen(timeBuf), 0);
-  display.print(timeBuf);
-
-  display.setCursor(0, 15);
+  // Line 3: Temp.IN
+  display.setCursor(0, 25);
   display.printf("Temp.IN: %.2f C", tempCorr);
 
-  display.setCursor(0, 30);
+  // Line 4: Hum.IN
+  display.setCursor(0, 38);
   display.printf("Hum.IN: %.2f %%", humCorr);
 
-  display.setCursor(0, 45);
+  // Line 5: Temp.OUT
+  display.setCursor(0, 51);
   display.printf("Temp.OUT: %.2f C", dsCorr);
 
   display.display();
