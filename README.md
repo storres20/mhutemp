@@ -34,8 +34,8 @@ The MHUTEMP system consists of two main components, maintained in separate repos
 
 ## 🔧 Technologies Used
 
-- **Microcontroller:** ESP8266 (Arduino C/C++)
-- **Sensors:** DS18B20, DHT11
+- **Microcontroller:** ESP8266 v3 (Arduino C/C++)
+- **Sensors:** DS18B20, DHT22
 - **Backend:** Node.js, Express.js, MongoDB
 - **Frontend:** Next.js (React.js framework)
 - **Communication:** HTTP POST (data submission) and WebSocket (real-time updates)
@@ -63,7 +63,7 @@ Please refer to the individual repositories for setup and deployment instruction
 
 ## 📜 License
 
-This project is licensed under the [MIT License](https://github.com/storres20/temphu/blob/main/LICENSE.txt).
+This project is licensed under the [MIT License](https://github.com/storres20/mhutemp/blob/main/LICENSE.txt).
 
 ---
 
