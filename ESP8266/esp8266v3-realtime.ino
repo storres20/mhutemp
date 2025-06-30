@@ -74,17 +74,17 @@ void displayDataOnOLED(float tempCorr, float humCorr, float dsCorr) {
   display.print("User: ");
   display.print(username);
 
-  // Line 3: Temp.IN
+  // Line 3: Temp.OUT
   display.setCursor(0, 25);
+  display.printf("Temp.OUT: %.2f C", dsCorr);
+
+  // Line 4: Temp.IN
+  display.setCursor(0, 38);
   display.printf("Temp.IN: %.2f C", tempCorr);
 
-  // Line 4: Hum.IN
-  display.setCursor(0, 38);
-  display.printf("Hum.IN: %.2f %%", humCorr);
-
-  // Line 5: Temp.OUT
+  // Line 5: Hum.IN
   display.setCursor(0, 51);
-  display.printf("Temp.OUT: %.2f C", dsCorr);
+  display.printf("Hum.IN: %.2f %%", humCorr);
 
   display.display();
 }
@@ -240,23 +240,36 @@ void loop() {
 
     String datetime = getDateTimeStringUTC();
     String jsonPayload = "{\"username\":\"" + String(username) + "\", "
+                         "\"dsTemperature\":" + String(correctedDSTemp) + ", "
                          "\"temperature\":" + String(correctedTemp) + ", "
                          "\"humidity\":" + String(correctedHum) + ", "
-                         "\"dsTemperature\":" + String(correctedDSTemp) + ", "
                          "\"datetime\":\"" + datetime + "\"}";
 
     if (wsConnected) webSocket.send(jsonPayload);
 
-    Serial.printf("%s - 📤 Enviado | Temp.IN: %.2f°C | Hum.IN: %.2f%% | Temp.OUT: %.2f°C\n",
+    Serial.printf("%s - 📤 Enviado | Temp.OUT: %.2f°C | Temp.IN: %.2f°C | Hum.IN: %.2f%%\n",
       datetime.c_str(), correctedTemp, correctedHum, correctedDSTemp);
   }
 }
 
+/* void reconnectWebSocket() {
+  String wsUrl = "wss://" + String(serverIP) + "/";
+  Serial.printf("%s - 🔗 Conectando WebSocket: %s\n", getDateTimeStringUTC().c_str(), wsUrl.c_str());
+  webSocket.connect(wsUrl);
+} */
 void reconnectWebSocket() {
   String wsUrl = "wss://" + String(serverIP) + "/";
   Serial.printf("%s - 🔗 Conectando WebSocket: %s\n", getDateTimeStringUTC().c_str(), wsUrl.c_str());
   webSocket.connect(wsUrl);
+
+  // ✅ Enviar mensaje de presentación con el username al conectar
+  delay(500);  // pequeña espera para evitar conflicto con handshake
+  String intro = "{\"username\":\"" + String(username) + "\"}";
+  webSocket.send(intro);
+
+  Serial.printf("%s - 📨 Username enviado: %s\n", getDateTimeStringUTC().c_str(), username);
 }
+
 
 String getDateTimeStringUTC() {
   time_t now = time(nullptr);
