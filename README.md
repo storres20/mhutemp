@@ -1,5 +1,7 @@
 # MHUTEMP: An Open-Source IoT Solution for Reliable Real-Time Humidity and Temperature Monitoring in Healthcare Facilities
 
+<img width="1920" height="1555" alt="image" src="https://github.com/user-attachments/assets/3cd21e0e-50ba-4685-8738-51d160d0c7db" />
+
 **MHUTEMP** (Humidity and Temperature Monitoring Unit) is an open-source IoT-based system designed to provide real-time environmental monitoring for healthcare applications, particularly blood bank refrigerators.  
 The project offers an affordable and scalable alternative to traditional commercial monitoring systems, ensuring full control over data and system customization without subscription fees.
 
